@@ -1,0 +1,50 @@
+# Visual Studio and IDE caches
+.vs/
+.cph-ng/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build directories and generated files
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.exe
+*.dll
+*.lib
+*.a
+*.o
+*.obj
+*.obj.enc
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.pch
+*.tlog
+*.lastbuildstate
+*.recipe
+*.log
+*.FileListAbsolute.txt
+*.bin
+
+# Local shortcuts and test input/output data
+*.lnk
+*.in
+*.ans
+*.out
+
+# Local credentials
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.pfx

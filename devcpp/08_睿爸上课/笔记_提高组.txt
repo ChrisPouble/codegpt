@@ -1,0 +1,1266 @@
+# 动态规划
+
+动态规划不会没关系的
+
+你可以用记忆化搜索
+
+
+
+记忆化搜索：搜索的过程中，如果碰到更好的状态，则重新搜索动态规划：对于某个状态而言，只有确定了它已经是最优了，才往下搜索，属于优化到了极致的搜索
+
+
+
+搜索：本质上是在枚举
+
+动态规划：虽然也是在枚举
+
+本质都是在枚举，区别是：搜索是无目的的枚举，动态规划是有方向性的枚举
+
+
+
+动态规划四要素：
+
+1. **状态：**保证你的状态是能够表示出唯一的情况的
+2. **状态转移方程**：相邻两个状态的转移过程
+3. **初始化**：起点
+4. **答案**：终点
+
+## 线性动态规划
+
+### [采药](https://www.csp-j.com/p/354)
+
+1. **状态：**$f_{i\ j}$ 表示前 $i$ 种草药时间为 $j$ 时能采摘到达最大价值
+
+2. **状态转移方程：**
+
+```cpp
+if(j >= a[i].t) f[i][j] = max(f[i - 1][j], f[i - 1][j - a[i].t] + a[i].w); //找到最大值 
+else f[i][j] = f[i - 1][j];
+```
+
+3. **初始化：**$f_{0\ 0} = 0$
+4. **答案：**$max\{f_{i\ T}\}$
+
+上代码（二维数组解法）：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int T, m, ans, f[110][1010]; //f[i][j]表示前i种草药时间为j时能采摘到达最大价值 
+struct node {
+	int t, w; //一个草药需要花费时间和得到价值 
+}a[110];
+
+int main() {
+	cin >> T >> m;
+	for (int i = 1; i <= m; i++)
+		cin >> a[i].t >> a[i].w;
+	for (int i = 1; i <= m; i++)
+		f[i][0] = 0; //初始化 
+	for (int i = 1; i <= m; i++)
+		for (int j = 1; j <= T; j++)
+			if(j >= a[i].t) f[i][j] = max(f[i - 1][j], f[i - 1][j - a[i].t] + a[i].w); //找到最大值 
+			else f[i][j] = f[i - 1][j];
+	for (int i = 1; i <= m; i++)
+		ans = max(ans, f[i][T]); //找答案 
+	cout << ans << endl;
+    return 0;
+}
+```
+
+很明显，空间占用的太多了，那怎么办呢？
+
+我们发现其实我们在更新 $f_{i\ j}$ 的时候只会用到两个值：$i和i-1$，所以我们的第一维只需要两个维度就可以了。我们称这种思路为滚动数组。
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int T, m, ans, f[2][1010]; //f[i % 2][j]表示前i种草药时间为j时能采摘到达最大价值 
+struct node {
+	int t, w; //一个草药需要花费时间和得到价值 
+}a[110];
+
+int main() {
+	cin >> T >> m;
+	for (int i = 1; i <= m; i++)
+		cin >> a[i].t >> a[i].w;
+	for (int i = 1; i <= m; i++)
+		for (int j = 1; j <= T; j++)
+			if(j >= a[i].t) f[i % 2][j] = max(f[(i - 1) % 2][j], f[(i - 1) % 2][j - a[i].t] + a[i].w);
+			else f[i % 2][j] = f[(i - 1) % 2][j];
+	cout << f[m % 2][T] << endl;
+    return 0;
+}
+```
+
+那么我们能不能再进一步优化空间呢？答案肯定是可以的
+
+上面讲解滚动数组的时候我们已经知道每次只会用到两个值了，所以我们可以直接把第一维省去，直接由 $i-1$ 复制到 $i$，这样就可以了
+
+不过需要注意的一点：如果我们枚举 $j$ 的时候从前往后遍历，是会错误的，我们可以尝试一下：
+
+先造这么一组数据：
+
+```
+10 4
+3 2
+5 3
+2 8
+9 5
+```
+
+进行计算，答案为`13`
+
+先贴出错误代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int T, m, ans, f[1010]; //f[i]表示时间为i时能采摘到达最大价值 
+struct node {
+	int t, w; //一个草药需要花费时间和得到价值 
+}a[110];
+
+int main() {
+	cin >> T >> m;
+	for (int i = 1; i <= m; i++)
+		cin >> a[i].t >> a[i].w;
+	for (int i = 1; i <= m; i++)
+		for (int j = 1; j <= T; j++) //错误的根源
+			if(j >= a[i].t) f[j] = max(f[j], f[j - a[i].t] + a[i].w); //找出最大值 
+	cout << f[T] << endl;
+    return 0;
+}
+```
+
+如果用一维动态规划来解的话，可以画出以下表格：
+
+上面那个表格是枚举时间，下面那个表格是枚举在当前时间能获得的最大值
+
+刚开始的样子：
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |
+
+枚举到第一种草药
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  0   |  2   |  2   |  2   |  2   |  2   |  2   |  2   |  2   |
+
+枚举到第二种草药
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  0   |  2   |  2   |  3   |  3   |  3   |  5   |  5   |  6   |
+
+枚举到第三种草药
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  8   |  8   |  16  |  16  |  24  |  24  |  32  |  32  |  40  |
+
+枚举到第四种草药
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  0   |  8   |  8   |  16  |  16  |  24  |  24  |  32  |  32  |  40  |
+
+很明显，我们这样子的结果错了，这是为啥呢？
+
+其实很简单，由于每次更新 $f_j$ 时，会用到 $f_k \{1  \le k < j \}$，而这时的 $f_k$ 已经被更新过了，也就是说，我们会把一种草药采过好几遍！
+
+那怎么办呢？其实很容易发现，从前到后不行，那就从后到前！
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int T, m, ans, f[1010]; //f[i]表示时间为i时能采摘到达最大价值 
+struct node {
+	int t, w; //一个草药需要花费时间和得到价值 
+}a[110];
+
+int main() {
+	cin >> T >> m;
+	for (int i = 1; i <= m; i++)
+		cin >> a[i].t >> a[i].w;
+	for (int i = 1; i <= m; i++)
+		for (int j = T; j >= 1; j--) //枚举时间 
+			if(j >= a[i].t) f[j] = max(f[j], f[j - a[i].t] + a[i].w); //找出最大值 
+	cout << f[T] << endl;
+    return 0;
+}
+```
+
+### [数字三角形](https://www.csp-j.com/p/366)
+
+1. **状态：**$f_{i\ j}$ 表示第 $i$ 行，第 $j$ 列往下找可以找到的最大值
+
+2. **状态转移方程：**从下往上遍历每一层，一个点可以由下面的两个点中的一个来更新，我们肯定取最大值，所以状态转移方程为：$f_{i\ j} = max(f_{i+1\ j+1}, f_{i+1\ j})+a_{i\ j}$
+
+3. **初始化：**底部所有的数即 $f_{n\ i}$ 的值设为 $a_{n\ i}$，因为底部的值都是原数组里的值。
+4. **答案：**$f_{1\ 1}$
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int r, a[1010][1010], f[1010][1010]; //f[i][j]表示第i行，第j列往下找可以找到的最大值。
+int main() {
+    cin >> r;
+    for (int i = 1; i <= r; i++)
+        for (int j = 1; j <= i; j++)
+            cin >> a[i][j];
+    for (int i = 1; i <= r; i++)
+        f[r][i] = a[r][i]; //初始化 
+    for (int i = r - 1; i >= 1; i--) //从下往上遍历 
+        for (int j = 1; j <= i; j++)
+            f[i][j] = max(f[i + 1][j], f[i + 1][j + 1]) + a[i][j]; //状态转移方程 
+    cout << f[1][1] << endl; //答案 
+    return 0;
+}
+```
+
+### [骑士游历](https://www.csp-j.com/p/365)
+
+1. **状态：**$f_{i\ j}$表示走到第 $i$ 行，第 $j$ 列的总方案数。
+
+2. **状态转移方程：**因为是由从前往后推来的，所以 $f_{i\ j} = f_{i-2\ j-1}+f_{i-2\ j+1}+f_{i-1\ j-2}+f_{i-1\ j+2}$，不过要注意边界条件。
+
+3. **初始化：**把起点 $f_{sx\ sy}$ 设成 $1$，才可以接着走。
+4. **答案：**我们最后要求到达第 $ex$ 行，第 $ey$ 列的总方案数，则答案为 $f_{ex\ ey}$。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+#define int long long //请注意：十年OI一场空，不开long long见祖宗 
+using namespace std;
+
+int n, m, sx, sy, ex, ey, f[55][55]; //f[i][j]表示走到第i行，第j列的方案总数 
+int work(int i, int j) { //写成函数更清晰 
+	int sum = 0;
+	if(i - 2 >= 1 && j - 1 >= 1) sum += f[i - 2][j - 1]; //判断 
+	if(i - 2 >= 1 && j + 1 <= m) sum += f[i - 2][j + 1]; //各种
+	if(i - 1 >= 1 && j - 2 >= 1) sum += f[i - 1][j - 2]; //越界 
+	if(i - 1 >= 1 && j + 2 <= m) sum += f[i - 1][j + 2]; //问题 
+	return sum; //返回 
+}
+
+signed main() {
+	cin >> n >> m >> sx >> sy >> ex >> ey;
+	f[sx][sy] = 1; //初始化 
+	for (int i = sx + 1; i <= ex; i++) //从sx+1开始跑 
+		for (int j = 1; j <= m; j++)
+			f[i][j] = work(i, j);
+	cout << f[ex][ey] << endl;
+    return 0;
+}
+```
+
+### [过河卒](https://www.csp-j.com/p/364)
+
+1. **状态：**$f_{i\ j}$表示从$点（0,0）$ 走到 $点(i,j)$ 的总方案数
+
+2. **状态转移方程：**设这个点所在的位置为 $(x, y)$， 这个状态转移方程分四种：
+
+   $1.$ 属于马的控制点，则 $f_{x\ y} = 0$
+
+   $2.$ 如果这个点处在在横轴上，不在纵轴上，则 $f_{x\ y} = f_{x\ y-1}$（从右边过来）
+
+   $3.$ 如果这个点处在在纵轴上，不在横轴上，则 $f_{x\ y} = f_{x-1\ y}$（从上面过来）
+
+   $4.$ 如果这个点既不在横轴，也不在纵轴，那么 $f_{x\ y} = f_{x-1\ y}+f_{x\ y-1}$
+
+3. **初始化：**你有可能发现我们上面第一种情况为什么没有如果这个点处在在横轴上，又处在在纵轴上，则 $f_{x\ y} = 0$ 呢？其实答案就在这里。因为点 $(0,0)$ 是起点，所以要进行初始化。那这个初始化也分两种情况：
+
+   $1.$ 如果起点也是马的控制点，则 $f_{0\ 0}=0$
+
+   $2.$ 否则 $f_{0\ 0}=1$
+
+4. **答案：**我们要求的就是到达点 $(n.m)$ 的总方案数，所以答案是 $f_{n\ m}$。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+//马的9个控制点的方向
+int d[9][2] = { {0, 0}, {1, 2}, {2, 1}, {-1, 2}, {2, -1}, {1, -2}, {-2, 1}, {-1, -2}, {-2, -1} };
+long long f[25][25]; //f[i][j]表示从(0, 0)点到(i, j)点的方案数
+int n, m, hx, hy, ctrl[25][25]; //马的9个控制点
+int main() {
+    int n, m, hx, hy; cin >> n >> m >> hx >> hy;
+    for (int i = 0; i < 9; i++) {
+        int xx = hx + d[i][0], yy = hy + d[i][1];
+        if (xx <= n && xx >= 0 && yy <= m && yy >= 0) ctrl[xx][yy] = 1;
+    }
+    if (ctrl[0][0]) f[0][0] = 0; //如果(0, 0)点也是马的控制点, 那么f[0][0]的方案数为0
+    else f[0][0] = 1; //否则为1
+    for (int i = 0; i <= n; i++)
+        for (int j = 0; j <= m; j++) {
+            if (ctrl[i][j]) continue; //如果是马的控制点，那么就跳过
+            if (i != 0) f[i][j] += f[i - 1][j]; //如果不在横轴上, 那么就加上上面的值
+            if (j != 0) f[i][j] += f[i][j - 1]; //如果不在竖轴上, 那么就加上左边的值
+        }
+    cout << f[n][m] << endl;
+    return 0;
+}
+```
+
+### [方格取数](https://www.csp-j.com/p/363)
+
+1. **状态：**$f_{i\ j\ k\ l}$ 表示第一次走到第 $i$ 行，第 $j$ 列，第二次到达第 $k$ 行，第 $l$ 列能获得的最大值。
+
+2. **状态转移方程：**我们要考虑以下四种情况：
+
+     $1$.第一次从左边过来，第二次从左边过来
+
+     $2$.第一次从左边过来，第二次从上边过来
+
+     $3$.第一次从上边过来，第二次从左边过来
+
+     $4$.第一次从上边过来，第二次从上边过来
+
+   那么可以我么就要取这四种情况的最大值了，即：$f_{i\ j\ k\ l} = max(f_{i-1\ j\ k-1\ l}, f_{i-1\ j\ k\ l-1}, f_{i\ j-1\ k-1\ l}, f_{i\ j-1\ k\ l-1})+a_{i\ j}+a_{k\ l}$
+
+   但要注意的是，如果$(i, j)=(k,l)$，那么就只能加其中一个（不能重复），所以此时要在原来的基础上减去一个 $a_{i\ j}$。
+
+3. **初始化：**刚开始也就时到点 $(1, 1)$能获得的最大值，即 $f_{1\ 1\ 1\ 1} = 0$
+
+4. **答案：**由于我们要求第一次和第二次走到右下角的最大值，所以我们的答案为 $f_{n\ n\ n\ n}$。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h> 
+using namespace std;
+
+int n, x, y, w, a[35][35], f[35][35][35][35]; //表示第一次走到第i行，第j列，第二次到达第k行，第l列能获得的最大值。
+int main() {
+	cin >> n;
+	while(cin >> x >> y >> w) { //输入 
+		if(x == 0 && y == 0 && w == 0) break; //退出 
+		a[x][y] = w;
+	}
+	for (int i = 1; i <= n; i++)
+		for (int j = 1; j <= n; j++)
+			for (int k = 1; k <= n; k++)
+				for (int l = 1; l <= n; l++) {
+					int t1 = max(f[i - 1][j][k - 1][l], f[i - 1][j][k][l - 1]); //记录 
+					int t2 = max(f[i][j - 1][k - 1][l], f[i][j - 1][k][l - 1]); //记录 
+					f[i][j][k][l] = max(t1, t2) + a[i][j] + a[k][l]; //求最大值 
+					if(i == k && j == l) f[i][j][k][l] -= a[i][j]; //如果位置相同，则减去其中一个 
+				}
+	cout << f[n][n][n][n] << endl; //答案 
+	return 0;
+}
+```
+
+### [装箱问题](https://www.csp-j.com/p/362)
+
+其实这就是一道01背包的板子题，只要把价值和花费看成相等的就行了。
+
+```
+#include <bits/stdc++.h> 
+using namespace std;
+
+int n, V, ans, a[35], f[35][20010]; //f[i][j]表示取前i个物品，容量为j时，能装下的最多物品
+int main() {
+	cin >> V >> n;
+	for (int i = 1; i <= n; i++)
+		cin >> a[i];
+	for (int i = 1; i <= n; i++) //枚举每一个元素
+		for (int j = 0; j <= V; j++) //枚举重量
+			if(j >= a[i]) f[i][j] = max(f[i - 1][j], f[i - 1][j - a[i]] + a[i]); //状态转移方程
+			else f[i][j] = f[i - 1][j];
+	for (int i = 1; i <= n; i++)
+		ans = max(ans, f[i][V]);
+	cout << V - ans << endl;
+	return 0;
+}
+```
+
+### [机器人走方格](https://www.csp-j.com/p/379)
+
+本题其实可以暴力枚举起点和终点，之后用动态规划进行记录方案数就好了
+
+1. **状态：** $f_{i\ j}$ 表示走到第 $i$ 行，第 $j$ 列的方案数
+
+2. **状态转移方程：**枚举所有的起点和终点，设起点为 $(i, j)$，终点为 $(k, l)$，那么 $f_{k\ l} += f_{i\ j}$
+
+3. **初始化：**刚开始也就时到点 $(1, 1)$能获得的最大值，即 $f_{1\ 1} = 1$。
+
+4. **答案：**由于我们要求走到右下角的最大值，所以我们的答案为 $f_{n\ m}$。
+
+因为要分别枚举起点和终点，时间复杂度为 $O(n^2m^2)$
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, m, f[105][105], a[105][105];
+int main() {
+	cin >> n >> m;
+	for (int i = 1; i <= n; i++)
+		for (int j = 1; j <= m; j++)
+			cin >> a[i][j];
+	memset(f, 0, sizeof(f));
+	f[1][1] = 1;
+	for (int i = 1; i <= n; i++) //枚举起点 
+		for (int j = 1; j <= m; j++) {
+			int pos = a[i][j];
+			for (int k = 0; k <= pos && i + k <= n; k++) { //找到终点 
+				for (int l = 0; l + k <= pos && l + j <= m; l++) {
+					if(k == 0 && l == 0) continue; //不能不走 
+					f[i + k][j + l] += f[i][j]; //加上 
+					f[i + k][j + l] %= 10000; //取模 
+				}
+			}
+		}
+	cout << f[n][m] << endl;
+	return 0;
+}
+```
+
+### [肥肥鼠吃奶酪](https://www.csp-j.com/p/379)
+
+利用搜索，每次向着四个方向搜索，找出最大值！
+
+不过，一定记得，要用：
+
+**记忆化搜索！**
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, m, a[110][110], f[110][110];
+int dfs(int x, int y) {
+	if(f[x][y] >= 0) return f[x][y];
+	int res = a[x][y];
+	for (int i = max(1, x - m); i <= min(n, x + m); i++) //不能越界
+		//枚举所有的水平方向 
+		if(a[i][y] > a[x][y]) res = max(res, dfs(i, y) + a[x][y]);
+	for (int j = max(1, y - m); j <= min(n, y + m); j++) //不能越界 
+		//枚举所有的垂直方向 
+		if(a[x][j] > a[x][y]) res = max(res, dfs(x, j) + a[x][y]);
+	return f[x][y] = res;
+}
+
+int main() {
+	cin >> n >> m;
+	for (int i = 1; i <= n; i++)
+		for (int j = 1; j <= n; j++)
+			cin >> a[i][j];
+	memset(f, -1, sizeof(f));
+	cout << dfs(1, 1) << endl;
+	return 0;
+}
+```
+
+## 区间动态规划
+
+### [卡牌游戏](https://www.csp-j.com/p/382)
+
+1. **状态：**$f_{i\ j}$ 表示抽调区间 $\{i,j\}$ 所有卡牌的最小得分
+2. **状态转移方程：**因为中间一部分的卡牌已经被抽掉了，所以左右两边分别为 $a_{i-1}$ 和 $a_{j+1}$。可推出$f_{i\ j} = min\{f_{i\ k-1} + f_{k-1\ j} + a_{i-1} \times a_k \times a_{j+1}\}$
+
+3. **初始化：**$f_{i\ i} = a_{i-1} \times a_i \times a_{i+1}$
+
+4. **答案：**`f[2][n-1]`
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, a[110], f[110][110]; //f[i][j]表示抽掉区间{i, j}所有卡牌的最小得分 
+int main() {
+    cin >> n;
+    for (int i = 1; i <= n; i++) cin >> a[i];
+    for (int i = 2; i <= n - 1; i++) f[i][i] = a[i - 1] * a[i] * a[i + 1];
+    for (int len = 2; len <= n - 2; len++) //枚举区间长度 
+        for (int i = 2; i + len - 1 <= n - 1; i++) { //枚举区间起点 
+        	int j = i + len - 1; //计算区间终点 
+        	f[i][j] = 0x3f3f3f3f; //初始化 
+            for (int k = i; k <= j; k++)
+            	//进行计算，因为中间一部分的卡牌已经被抽掉了，所以左右两边分别为a[i - 1]和a[j + 1]
+				f[i][j] = min(f[i][j], f[i][k - 1] + f[k + 1][j] + a[i - 1] * a[k] * a[j + 1]);
+        }
+    cout << f[2][n - 1] << endl; //答案 
+    return 0;
+}
+```
+
+### [体检](https://www.csp-j.com/p/384)
+
+由于这是一个栈，所以开头元素可以决定谁先体检，谁后体检。于是这样，开头元素就可以把体检序列分成两半了，一边是 $dp_{i+1\ i+k-1}$，另一边是 $dp_{i+k\ j}$，而中间则是 $a_i$，于是这样，我们就可以进行`区间 dp` 了。
+
+1. **状态：**$f_{i\ j}$ 表示以 $i$ 为区间起点，$j$ 为区间终点的最小愤怒值 
+2. **状态转移方程：**枚举区间分割点 $k$，那么状态转移方程为
+
+```
+f[i][j] = min(f[i][j], f[i + 1][i + k - 1] //算出由i分割成两边的左边所有人的愤怒值，即为f[i + 1][i + k - 1] 
+					 + a[i] * (k - 1) //i的愤怒值 
+					 + f[i + k][j] + k * (sum[j] - sum[i + k - 1]));
+					 //算出由i分割成两边的右边所有人的愤怒值，由于前面已经有了k个人了，所以它们的愤怒值要加上它们原来愤怒值*k 
+```
+
+
+
+3. **初始化：**$f_{i\ i} = 0$
+
+4. **答案：**$f_{1\ n}$
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, a[110], sum[110], f[110][110]; //f[i][j]表示以i为区间起点，j为区间终点的最小愤怒值 
+int main() {
+	cin >> n;
+	for (int i = 1; i <= n; i++) {
+		cin >> a[i];
+		sum[i] = sum[i - 1] + a[i]; //算出前缀和，后面要用 
+	}
+	for (int len = 2; len <= n; len++) { //枚举区间长度 
+		for (int i = 1; i + len - 1 <= n; i++) { //枚举区间开头 
+			int j = i + len - 1; //计算区间末尾 
+			f[i][j] = 0x3f3f3f3f; //初始化 
+			for (int k = 1; k <= len; k++) //枚举i分割的中间点 
+				f[i][j] = min(f[i][j], f[i + 1][i + k - 1] //算出由i分割成两边的左边所有人的愤怒值，即为f[i + 1][i + k - 1] 
+					 + a[i] * (k - 1) //i的愤怒值 
+					 + f[i + k][j] + k * (sum[j] - sum[i + k - 1]));  //算出由i分割成两边的右边所有人的愤怒值，由于前面已经有了k个人了，所以它们的愤怒值要加上它们原来愤怒值*k 
+		}
+	}
+	cout << f[1][n] << endl;
+	return 0;
+}
+```
+
+### [送外卖](https://www.csp-j.com/p/386)
+
+1. **状态：**`f[i][j][0/1]`表示把 $\{i, j\}$ 这一段的外卖送完以后徐老师在 $i/j$ 的最小不满值
+
+2. **状态转移方程：**`f[i][j]`是来自于`f[i+1][j]`和`f[i][j-1]`，所以可以分为两种情况：
+
+   1. 因为`f[i+1][j]`也分为`f[i+1][j][0/1]`，所以也要分成两种情况，取它们之间的最小值
+
+      ```
+      f[i][j][0] = min(f[i + 1][j][0] + (a[i + 1] - a[i]]) * (sum[i] + sum[n] - sum[j]), 
+      				f[i + 1][j][1] + (a[j] - a[i]]) * (sum[i] + sum[n] - sum[j])) //计算那些还没有送到外卖的人的愤怒值
+      ```
+
+   2. 接着又要将`f[i][j-1]`分成`f[i][j-1][0]`和`f[i][j-1][1]`来讨论
+
+      ```
+      f[i][j][1] = min(f[i][j - 1][0] + (a[j] - a[i]]) * (sum[i - 1] + sum[n] - sum[j - 1]), 
+      				f[i][j - 1][1] + (a[j] - a[j - 1]]) * (sum[i - 1] + sum[n] - sum[j - 1])) //计算那些还没有送到外卖的人的愤怒值
+      ```
+
+3. **初始化：**只要发现一个送外卖的点 $i$ 在起点，则`f[i][i][0] = f[i][i][1] = 0`
+
+   ${\color{red} 但是!你如果去跑一下样例，你会惊奇的发现:}$
+
+   $输出全部都为 0x3f3f3f3f$ ！
+
+   因为有可能没有一个外卖在起点！
+
+   那么咋办呢？其实如果真的没有的话
+
+   它们不点外卖，我点！直接就在起点点一个外卖，这样问题就解决啦！
+
+   ```cpp
+   a[++n] = {r, 0}; //别人不点外卖，我点！直接在徐老师的出发点点一个外卖，那么就不用担心待会数组全为 0x3f3f3f3f 的情况了 
+   for (int i = 1; i <= n; i++)
+   		if(a[i].x == r) f[i][i][0] = f[i][i][1] = 0; //如果就在起点点了外卖，那么只需要等0下就可以了 
+   ```
+
+4. **答案：**`min(f[1][n][0], f[1][n][1])`
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, r, pre[1010], f[1010][1010][2]; //f[i][j][0]表示当徐老师送完i~j之间的所有外卖后，他所在的点在i点上所需要的最短时间，f[i][j][1]则表示它所在的点在j点上所需要的最短时间
+struct people{
+	int x, angry; //坐标和不满系数 
+}a[1010];
+
+bool cmp(people x, people y) {
+	return x.x < y.x;
+}
+
+int main() {
+	cin >> n >> r;
+	for (int i = 1; i <= n; i++) cin >> a[i].x >> a[i].angry;
+	a[++n] = {r, 0}; //别人不点外卖，我点！直接在徐老师的出发点点一个外卖，那么就不用担心待会数组全为 0x3f3f3f3f 的情况了 
+	sort(a + 1, a + n + 1, cmp); //按坐标排序 
+	for (int i = 1; i <= n; i++) pre[i] = pre[i - 1] + a[i].angry; //求出不满系数的前缀和 
+	memset(f, 0x3f, sizeof(f));
+	for (int i = 1; i <= n; i++)
+		if(a[i].x == r) f[i][i][0] = f[i][i][1] = 0; //如果就在起点点了外卖，那么只需要等0下就可以了 
+	for (int len = 2; len <= n; len++) //枚举区间长度 
+		for (int i = 1; i + len - 1 <= n; i++) { //枚举区间起点 
+			int j = i + len - 1; //计算终点
+			//下面自己慢慢理解加消化以下...... 
+			f[i][j][0] = min(f[i + 1][j][0] + (a[i + 1].x - a[i].x) * (pre[i] + pre[n] - pre[j]), f[i + 1][j][1] + (a[j].x - a[i].x) * (pre[i] + pre[n] - pre[j]));
+			f[i][j][1] = min(f[i][j - 1][0] + (a[j].x - a[i].x) * (pre[i - 1] + pre[n] - pre[j - 1]), f[i][j - 1][1] + (a[j].x - a[j - 1].x) * (pre[i - 1] + pre[n] - pre[j - 1]));
+		}
+	cout << min(f[1][n][0], f[1][n][1]) << endl; //答案 
+	return 0;
+}
+```
+
+# 基础图论
+
+## 最短路
+
+### 板子
+
+#### Bellman_Ford
+
+循环 $n$ 次，每次遍历 $m$ 条边，看看是否可以更新，时间复杂度为 $O(nm)$
+
+```cpp
+#include <bits/stdc++.h>
+#define int long long
+using namespace std;
+
+const int maxn = 1e5 + 10;
+int dis[maxn]; //dis[i]表示起点到达编号为i的点需要的时间
+struct rate { //存一条边
+	int u, v, w; //存储起点、终点、权值
+};
+
+vector<rate>linker; //存储每一条边
+void Bellman_Ford(int n, int m, int s) {
+	for (int i = 1; i <= n; i++)
+		dis[i] = 1e10; //赋上一个很大的值
+	dis[s] = 0ll; //初始化
+	for (int cnt = 1; cnt <= n; cnt++) //循环n次 
+		for (auto i:linker) { //遍历每一条边 
+			int u = i.u;
+			int v = i.v;
+			int w = i.w;
+			dis[v] = min(dis[v], dis[u] + w);
+		}
+	for (int i = 1; i <= n; i++)
+		if(dis[i] == 1e10) cout << -1 << " ";
+		else cout << dis[i] << " ";
+}
+
+int n, m, s;
+signed main() {
+	cin >> n >> m >> s;
+	for (int i = 1; i <= m; i++) {
+		int u, v, w;
+		cin >> u >> v >> w;
+		linker.push_back({u, v, w}); //把每一条边都装进去 
+	}
+	Bellman_Ford(n, m, s);
+	return 0;
+}
+```
+
+#### dijkstra
+
+每次离当前点最近的一个点，让这个点进行更新别的点，这样就可以找到最优解。那么每次找离当前点最近的一个点可以采用堆优化，时间复杂度为 $O(nlogn)$。
+
+```cpp
+#include <bits/stdc++.h>
+#define int long long
+using namespace std;
+
+const int maxn = 1e5 + 10;
+int dis[maxn]; //dis[i]表示起点到达编号为i的点需要的时间 
+bool vis[maxn]; //vis[i]表示这个点有没有遍历过 
+struct node {
+	int id, value; //一个点的编号和起点到达这个点的最短路径 
+};
+
+struct rate { //存一条边 
+	int to, w; //存储一个点可以到达的点和到达这个点需要的时间 
+};
+
+bool operator<(node A, node B) { //堆排序 
+	return A.value > B.value; //找到离起点时间最小的点来更新别的点 
+}
+
+vector<rate>linker[maxn]; //邻接表 
+priority_queue<node>q; //堆优化 
+void Dijkstra(int n, int m, int s) {
+	for (int i = 1; i <= n; i++)
+		dis[i] = 1e10; //赋上一个很大的值 
+	dis[s] = 0ll; //初始化 
+	q.push({s, 0ll}); //把起点塞进去 
+	while(!q.empty()) {
+		int id = q.top().id; //把这个点拿出来 
+		int val = q.top().value; //最短路径也拿出来 
+		q.pop(); //踢掉这个元素 
+		if(vis[id]) continue; //如果这个点已经被更新过了 
+		vis[id] = 1; //进行记录
+		dis[id] = min(val, dis[id]); //更新一下dis值 
+		for (int i = 0; i < linker[id].size(); i++)
+			q.push({linker[id][i].to, val + linker[id][i].w}); //把这个点能到达的所有边都放进去 
+	}
+	for (int i = 1; i <= n; i++)
+		if(dis[i] == 1e10) cout << -1 << " ";
+		else cout << dis[i] << " ";
+}
+
+int n, m, s;
+signed main() {
+	cin >> n >> m >> s;
+	for (int i = 1; i <= m; i++) {
+		int u, v, w;
+		cin >> u >> v >> w;
+		linker[u].push_back({v, w});
+	}
+	Dijkstra(n, m, s);
+	return 0;
+}
+```
+
+# 树状数组
+
+首先，在看树状数组之前，我们先看一个代码：
+
+```cpp
+int lowbit(int x) {
+	return x & (-x);
+}
+```
+
+这个代码可以求出 $x$ 的二进制从右往左第一个数 $1$ 的位置，比如我们举一个例子：
+
+$6$ 的二进制为 $110$
+
+而 $\operatorname{lowbit}(x)$ 为 $2$，即从右往左的第一个 $1$ 的位置的十进制数
+
+之后，我们就可以来看树状数组了
+
+## 板子
+
+### 区间和
+
+我们定义一个 $tree$，$tree_i$ 表示以 $i$ 结尾，长度为 $\operatorname{lowbit}(ii)$ 的区间和
+
+那么可以得出：
+
+```cpp
+tree[1] = a[1];
+tree[2] = a[1] + a[2];
+tree[3] = a[3];
+tree[4] = a[1] + a[2] + a[3] + a[4];
+tree[5] = a[5];
+tree[6] = a[5] + a[6];
+tree[7] = a[7];
+tree[8] = a[1] + a[2] + a[3] + a[4] + a[5] + a[6] + a[7] + a[8];
+```
+
+那么区间和代码如下：
+
+```cpp
+int query_sum(int x) {
+	int ans = 0;
+	while(x) {
+		ans += tree[x];
+		x -= lowbit(x);
+	}
+	return ans;
+}
+```
+
+为什么我们可以这么做呢？来，我慢慢跟你讲
+
+首先我们举一个例子，比如前 $6$ 个数的和
+
+而我们会发现在 $tree_1 \sim tree_6$ 之间只有 $tree_6$ 用到了 $a_6$，说明答案肯定需要用到 $tree_6$ 了
+
+接着，我们由于已经用过 $tree_6$ 了，那么我们要求的前 $6$ 个数的和变成了求前 $4$ 个数的和了
+
+而我们又会发现 $tree_1 \sim tree_4$ 之间只有 $tree_4$ 用到了 $a_4$，说明答案可定需要用到 $tree_4$ 了
+
+最后，我们会发现 $tree_4$ 已经把前 $4$ 个数的和求出来了，那么算法结束，答案为 $tree_6 + tree_4$
+
+### 区间最值
+
+1. 众所周知，我们在学 st 表的时候，已经明白了没有前缀最大值这种概念，那么树状数组能否解决这种区间最大值问题呢？
+   - 首先，我们先列出以下这个表（应该都很熟悉吧）
+
+```cpp
+tree[1] = a[1];
+tree[2] = max(a[1], a[2]);
+tree[3] = a[3];
+tree[4] = max(a[1], a[2], a[3], a[4]);
+tree[5] = a[5];
+tree[6] = max(a[5], a[6]);
+tree[7] = a[7];
+tree[8] = max(a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
+```
+
+- 接着还是举例子，比如我们来求 $1 \sim 8$ 的区间最大值
+
+~~一看就知道是 $tree_8$~~
+
+- 那么我们再来举一个例子，比如求 $1 \sim 7$ 的区间最大值
+
+分割区间，可以得出答案应为 $max\{tree_7,tree_6,tree_4\}$
+
+- 看起来好像与求区间和没有区别，那么我们再举一个例子，比如求 $4 \sim 7$ 的区间最大值
+
+分割区间，可以得出答案应为 $max\{tree_7,tree_6,然后不知道了\}$
+
+其实我们想想，有的时候不一定要用到 $tree$ 数组，直接用 $a$ 数组就好了，那么答案应为 $max\{tree_7,tree_6,a_4\}$
+
+那么这题就解决了，上代码
+
+```cpp
+int query_max(int x, int y) {
+	int ans = 0;
+	while(x <= y) {
+		if(y - lowbit(y) + 1 >= x) { //区间左端点大于等于x，说明可以用tree[y] 
+			ans = max(ans, tree[y]); //找出最大值 
+			y -= lowbit(y); //接着进行查找 
+		} else ans = max(ans, a[y--]); //否则只能一个一个的比较 
+	}
+	return ans;
+}
+```
+
+### 总结
+
+1. 优势：
+   - 代码短（非常重要）
+   - 运行速度比线段树快一些（常数）
+2. 劣势：
+   - 能够解决的问题必须转化为前缀区间问题
+
+最后再放一个集合吧：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 100010
+using namespace std;
+
+int n, q, a[maxn], pre[maxn], tree[maxn];
+int lowbit(int x) { //非常重要的一个东西 
+	return x & (-x);
+}
+
+void update(int x, int v) {
+	int t = x; 
+	while(x <= n) {
+		if(x - lowbit(x) + 1 <= t) tree[x] = tree[x] - a[t] + v; //进行节点更新 
+		x += lowbit(x); //接着查找 
+	}
+	a[t] = v; //这个也不要忘了 
+}
+
+int query_sum(int x) {
+	int ans = 0;
+	while(x) {
+		ans += tree[x]; //加上 
+		x -= lowbit(x); //缩小区间 
+	}
+	return ans;
+}
+
+int query_max(int x, int y) {
+	int ans = 0;
+	while(x <= y) {
+		if(y - lowbit(y) + 1 >= x) { //区间左端点大于等于x，说明可以用tree[y] 
+			ans = max(ans, tree[y]); //找出最大值 
+			y -= lowbit(y); //接着进行查找 
+		} else ans = max(ans, a[y--]); //否则只能一个一个的比较 
+	}
+	return ans;
+}
+
+int main() {
+	cin >> n;
+	for (int i = 1; i <= n; i++) {
+		cin >> a[i];
+		pre[i] = pre[i - 1] + a[i]; //求出前缀和，用来构造树状数组 
+	}
+	for (int i = 1; i <= n; i++)
+		tree[i] = pre[i] - pre[i - lowbit(i)]; //构建树状数组 
+	cin >> q;
+	while(q--) {
+		int d, x, y;
+		cin >> d >> x >> y;
+		if(d == 1) cout << query_sum(y) - query_sum(x - 1) << endl; //区间和 
+		else if(d == 2) cout << query_max(x, y) << endl; //区间最大值 
+		else update(x, y); //把坐标为x的点的值赋值为y 
+	}
+	return 0;
+}
+```
+
+# 离散化与哈希
+
+## [园艺](https://www.csp-j.com/p/397)
+
+看到别的题解的判断实数的那一部分很麻烦，于是本蒟蒻下定决心，一定要把你们讲懂！
+
+其实本题只需要打暴力就好了，不过我们注意到了题目中的一句话：
+
+> 你需要根据这些信息，给温室选定一个温度（这个温度可以是任意$\color{red}{实数}$）
+
+所以，我们在枚举的过程中要每 $0.5$ 个数加一次，那样会很麻烦，那该怎么做呢？
+
+仔细想想，其实我们只要把温度扩大两倍就好了，这样就可以每 $1$ 个数加一次就可以了。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 20010
+using namespace std;
+
+int n, ans;
+struct node {
+	int l, r, a, b, c;
+}w[maxn];
+
+int main() {
+	scanf("%d", &n);
+	for (int i = 1; i <= n; i++) {
+		scanf("%d%d%d%d%d", &w[i].l, &w[i].r, &w[i].a, &w[i].b, &w[i].c);
+		w[i].l *= 2, w[i].r *= 2, w[i].a *= 2, w[i].b *= 2, w[i].c *= 2; //扩大两倍 
+	}
+	for (int i = 0; i <= maxn; i++) {
+		int sum = 0;
+		for (int j = 1; j <= n; j++)
+			if(w[j].l <= i && w[j].r >= i) sum += w[j].a; //适宜温度 
+			else if(w[j].r < i) sum += w[j].b; //超出上限 
+			else if(w[j].l > i) sum += w[j].c; //低处下限 
+		ans = max(ans, sum); //找最大值 
+	}
+	printf("%d\n", ans / 2); //最后要变回原来的数量 
+	return 0;
+}
+```
+
+## [排序](https://www.csp-j.com/p/398)
+
+这道题其实与[这题](https://www.luogu.com.cn/problem/P1116)差不多，只不过因为这题的 $n \le 500000$，所以难度也增加了，那该怎么办呢？
+
+首先，让我们先想想暴力该怎么写。
+
+由于这道题是让我们求出需要交换多少次，而每次交换相邻两个数以达到元素有序的排序是什么呢？让我们想想！
+
+- 选择排序，不对（这是每次与第一个元素交换的排序）
+- 插入排序，不对（这是每次插入到前面某个点的排序）
+- 计数排序，不对（这不是交换类型的排序）
+- 桶排序，不对（这是混合类型的排序）
+- 基数排序，不对（这不是交换类型的排序）
+- 快速排序，不对（这是两个元素交换位置不确定的排序）
+- 希尔排序，不对（这是两个元素交换不一定相邻的排序）
+- 堆排序，不对（这是交换父节点和子节点的排序）
+
+想来想去，似乎都没有，那到底是什么排序呢？
+
+聪明的你应该看出来了吧！这就是
+
+> # 冒泡排序！
+
+那么思路就很清晰了，每次如果 $a_j > a_{j+1}$，那么 $ans+1$，并且交换这两个元素就好了。
+
+上代码（请注意，这是 $77$ 分的代码）：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 500010 
+using namespace std;
+
+int n, a[maxn];
+long long ans;
+int main() {
+	scanf("%d", &n);
+	for (int i = 1; i <= n; i++)
+		scanf("%d", &a[i]);
+	for (int i = 1; i < n; i++) //冒泡排序遍历n-1次 
+		for (int j = 1; j <= n - i; j++) //开始遍历每个元素
+			if(a[j] > a[j + 1]) ans++, swap(a[j], a[j + 1]); //如果发现a[j] > a[j + 1]，那么交换两个数的值，并且ans++; 
+	printf("%d\n", ans);
+	return 0;
+}
+```
+
+很明显，虽然我们思路是对的，但是由于冒泡太慢了，导致最后两个点过不了，那该怎么办呢？
+
+再看看我们上面分析的，数一数，我们已经判断完了十大排序中的九大排序，那还有一个排序是什么呢？
+
+聪明的你又会发现了，这就是
+
+> # 归并排序！
+
+找到了最后的救命稻草之后，我们想一想，如何用归并排序巧妙的解这道题呢？
+
+由于不知道该怎么分析，那我们先把归并排序的思路摸索一遍。
+
+- 首先，先分治（手玩一下样例）
+
+![](https://cdn.luogu.com.cn/upload/image_hosting/svl3g8aj.png)
+
+- 之后，进行合并。但是，应该怎么合并呢？
+
+我们可以进行分析，定义一个变量 $mid = \frac{l + r}{2}$，再定义两个指针 $i = l$ 和 $j = mid + 1$，$i$ 负责遍历左子树，$j$ 负责遍历右子树。在一些基本的工作做完之后，我们就要来合并了。
+
+那么如何合并呢？我们分两种情况讨论：
+
+1. $arr_i < arr_j$，那什么事情都不用干（因为 $arr_i$ 本身就在左边，所以不需要 $ans$ 记录），直接把 $arr_i$ 放入临时数组里面就可以了。
+2. $arr_i \ge arr_j$，那么就代表要把 $arr_j$ 进行挪动（因为 $arr_j$ 在右边），需要用到 $ans$ 了。那么挪动多少呢？我们还是可以画图想想：
+   刚开始时是这样![](https://cdn.luogu.com.cn/upload/image_hosting/vovvxlqn.png)
+   之后发现 $0 < 4$，把 $0$ 加入 $temp$ 数组里![](https://cdn.luogu.com.cn/upload/image_hosting/28yhrnbo.png)
+   接着 $i+1$，又发现 $1 < 4$，把 $1$ 加入 $temp$ 数组![](https://cdn.luogu.com.cn/upload/image_hosting/ty2jdr25.png)
+   接着 $i+1$，发现 $9 \ge 4$，则 $4$ 加入 $temp$ 数组里。而这时候，$4$ 应该移动位置了，那么移动多少呢？很明显需要移动 $1$ 个位置，那为什么是移动一个位置呢？因为剩下左边元素的数量是 $1$。所以，我们可以推出，如果 $arr_i \ge arr_j$，则 $ans + (mid - i + 1)$ ![](https://cdn.luogu.com.cn/upload/image_hosting/c8kha684.png)
+   接着 $j+1$，发现 $9 \ge 5$，则 $5$ 加如 $temp$ 数组里。之后 $ans + (mid - i + 1)$。
+   ![](https://cdn.luogu.com.cn/upload/image_hosting/ylnmu32p.png)
+   接着 $j+1$，可以发现 $j > r$，则退出。并且把 $9$ 加入末端。
+   ![](https://cdn.luogu.com.cn/upload/image_hosting/srmgyhzk.png)
+   接着 $i+1$，算法结束。
+   当我们发现如果 $arr_i \ge arr_j$，则 $ans + (mid - i + 1)$ 这个公式之后，问题就随之迎刃而解了。
+
+上代码（这次是真 AC）：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 500010
+using namespace std;
+
+//归并排序
+long long ans;
+int len, arr[maxn], temp[maxn]; //辅助空间 
+void MergeSort(int arr[], int start, int end) { //start和end分别是左边界和右边界
+	if (start >= end) return;
+	int mid = (start + end) / 2, i = start, j = mid + 1;
+	MergeSort(arr, start, mid); //分成两个子序列 
+	MergeSort(arr, mid + 1, end);
+ 
+	// 合并两个有序序列
+	int k = 1; // 表示辅助空间有多少个元素
+	while (i <= mid && j <= end) {
+		if (arr[i] < arr[j]) temp[k++] = arr[i++]; //没有产生逆序对
+		else ans += mid - i + 1, temp[k++] = arr[j++]; //如果产生了逆序对，则答案加上左边剩余元素个数
+	}
+	while (i <= mid) temp[k++] = arr[i++]; //把剩下数的合并
+	while (j <= end) temp[k++] = arr[j++]; //同上 
+	// 把辅助空间的数据放到原空间
+	for (int i = start; i <= end; i++)
+		arr[i] = temp[i - start + 1];
+}
+
+
+int main() {
+	cin >> len;
+	for (int i = 1; i <= len; i++)
+		cin >> arr[i];
+	MergeSort(arr, 1, len);
+	cout << ans << endl;
+	return 0;
+}
+```
+
+## [等式](https://www.csp-j.com/p/400)
+
+### 暴力法
+
+思路很清晰，每次只枚举 $1 \sim 100$，最后因为正负数原因，答案要乘上 $16$
+
+时间复杂度为 $O(100^4)$，空间复杂度为 $O(1)$，还可以。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int a, b, c, d, ans;
+int main() {
+	cin >> a >> b >> c >> d;
+	for (int x1 = 1; x1 <= 100; x1++) {
+		if(x1 == 0) continue;
+		for (int x2 = 1; x2 <= 100; x2++) {
+			if(x2 == 0) continue;
+			for (int x3 = 1; x3 <= 100; x3++) {
+				if(x3 == 0) continue;
+				for (int x4 = 1; x4 <= 100; x4++) {
+					if(x4 == 0) continue;
+					if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * x4 * x4 == 0) ans++;
+				}
+			}
+		}
+	}
+	cout << ans * 16 << endl;
+	return 0;
+}
+```
+
+### 二分法
+
+首先，先打了一个暴力，铁定超时。
+
+回来之后想了想，其实可以前三个 $x$ 打暴力，最后一个 $x$ 直接用二分答案不就行了！
+
+时间复杂度 $O(200^3\log 200)$，空间复杂度 $O(1)$，还不错。
+
+上代码 (时间在 $200$ ms 左右)：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int a, b, c, d, ans;
+int main() {
+	cin >> a >> b >> c >> d;
+	for (int x1 = -100; x1 <= 100; x1++) { //枚举x1 
+		if(x1 == 0) continue;
+		for (int x2 = -100; x2 <= 100; x2++) { //枚举x2 
+			if(x2 == 0) continue;
+			for (int x3 = -100; x3 <= 100; x3++) { //枚举x3 
+				if(x3 == 0) continue;
+				int l = -100, r = 100; //二分x4 
+				while(l <= r) {
+					int mid = (l + r) / 2;
+					if(mid == 0) { //如果二分出来了个0 
+						if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 > 0) r = mid - 1; //如果和大于0，则说明r太大了 
+						else l = mid + 1; //否则说明l太小了 
+						continue; 
+					}
+					if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * mid * mid > 0) r = mid - 1; //r太大了 
+					else if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * mid * mid < 0) l = mid + 1; //l太小了 
+					else {
+						ans += 2; //正负数都要计算，所以要加上2 
+						break;
+					}
+				}
+			}
+		}
+	}
+	cout << ans << endl;
+	return 0;
+}
+```
+
+### 离散化
+
+上面那个二分还是太慢了，其实我们可以先把前面两个 $x$ 能组成的所有数全都记录下来，之后遍历后面两个 $x$ 时，判断是否可以构成 $0$ 就可以了。
+
+不过我这里是用 map 记录的，而 map 的查询速度是 $O(100^2)$，所以时间复杂度为 $O(100^2\log 100^2)$，空间复杂度为 $O(100^2)$，但还是比二分强。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int a, b, c, d, ans;
+map<int, int>f;
+int main() {
+	cin >> a >> b >> c >> d;
+	for (int i = 1; i <= 100; i++)
+		for (int j = 1; j <= 100; j++)
+			f[a * i * i + b * j * j]++; //记录
+	for (int i = 1; i <= 100; i++)
+		for (int j = 1; j <= 100; j++)
+			ans += f[-(c * i * i + d * j * j)]; //求出和为0的数量
+	cout << ans * 16 << endl; //因为正负数都要计算，所以要乘16
+	return 0;
+}
+```
+
+### 大集合
+
+最后，把这三种方法写在一起，弄成一个集合吧！
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int a, b, c, d;
+int violence() { //打暴力，每次只枚举1~100，最后答案乘16
+	int ans = 0; 
+	for (int x1 = 1; x1 <= 100; x1++) { //枚举x1 
+		if(x1 == 0) continue;
+		for (int x2 = 1; x2 <= 100; x2++) { //枚举x2 
+			if(x2 == 0) continue;
+			for (int x3 = 1; x3 <= 100; x3++) { //枚举x3 
+				if(x3 == 0) continue;
+				for (int x4 = 1; x4 <= 100; x4++) { //枚举x4 
+					if(x4 == 0) continue;
+					if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * x4 * x4 == 0) ans++; //记录答案 
+				}
+			}
+		}
+	}
+	return ans * 16;
+}
+
+int binary() { //二分法，前三个x暴力，最后一个x二分答案 
+	int ans = 0;
+	for (int x1 = -100; x1 <= 100; x1++) { //枚举x1 
+		if(x1 == 0) continue;
+		for (int x2 = -100; x2 <= 100; x2++) { //枚举x2 
+			if(x2 == 0) continue;
+			for (int x3 = -100; x3 <= 100; x3++) { //枚举x3 
+				if(x3 == 0) continue;
+				int l = -100, r = 100; //二分x4 
+				while(l <= r) {
+					int mid = (l + r) / 2;
+					if(mid == 0) { //如果二分出来了个0 
+						if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 > 0) r = mid - 1; //如果和大于0，则说明r太大了 
+						else l = mid + 1; //否则说明l太小了 
+						continue; 
+					}
+					if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * mid * mid > 0) r = mid - 1; //r太大了 
+					else if(a * x1 * x1 + b * x2 * x2 + c * x3 * x3 + d * mid * mid < 0) l = mid + 1; //l太小了 
+					else {
+						ans += 2; //正负数都要计算，所以要加上2 
+						break;
+					}
+				}
+			}
+		}
+	}
+	return ans;
+}
+
+int discretizing() {
+	int ans = 0;
+	map<int, int>f;
+	for (int i = 1; i <= 100; i++)
+		for (int j = 1; j <= 100; j++)
+			f[a * i * i + b * j * j]++;
+	for (int i = 1; i <= 100; i++)
+		for (int j = 1; j <= 100; j++)
+			ans += f[-(c * i * i + d * j * j)];
+	return ans * 16; //因为正负数都要计算，所以要乘16
+}
+
+int main() {
+	cin >> a >> b >> c >> d;
+//	cout << violence() << endl;
+//	cout << binary() << endl;
+//	cout << discretizing() << endl;
+	return 0;
+}
+```

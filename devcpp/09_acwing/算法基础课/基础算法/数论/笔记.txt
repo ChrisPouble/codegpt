@@ -1,0 +1,889 @@
+# 质数
+
+## 判断质数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/868/)
+
+首先想到的思路就是从 $2$ 枚举到 $n-1$，之后一个一个试，如果能被整除，说明这个不是质数。如果试完了，发现都不能被整除，那么就是质数。
+
+上代码：
+
+```cpp
+bool is(int x) {
+	if(x < 2) return false; //特判
+	for (int i = 2; i <= x - 1; i++) //从2枚举到x-1
+		if(x % i == 0) return false; //如果发现能被一个数整除，则返回false
+	return true; //否则返回true
+}
+```
+
+但是这样的时间复杂度是 $O(n)$，太慢了，有没有什么快速的方法呢？
+
+我们可以想一想，如果一个数 $n$，它能被 $k$ 整除，那么 $n$ 必然有另一个因数 $\frac{k}{n}$。这样我们枚举的时候可以只枚举这对因数中的较小的那一个。所以我们可以得出结论：我们只要枚举到 $O(\sqrt n)$ 就行了，因为 $k$ 最大为 $\sqrt n$
+
+上代码：
+
+```cpp
+bool is(int x) {
+	if(x < 2) return false; //特判
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) return false; //如果发现能被一个数整除，则返回false
+	return true; //否则返回true
+}
+```
+
+## 分解质因数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/869/)
+
+首先想到的思路是从 $2$ 枚举到 $n$，如果能被其中一个数整除的话，那么进行统计，之后输出就行了：
+
+```cpp
+void solve(int x) {
+	for (int i = 2; i <= x; i++) //从2枚举到x 
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			cout << i << " " << sum << endl; //输出 
+		}
+	cout << endl;
+}
+```
+
+但是特殊情况，比如一个质数 $1e9+7$，就需要枚举 $n$ 次，也就是说，最坏时间复杂度为 $O(n)$
+
+但是我们可以想想，真的有必要枚举 $n$ 次吗？
+
+我们造几个数据，之后对它进行分解质因数：
+
+例如 $12$，分解质因数后为：$[2^2,3^1]$
+
+例如 $13$，分解质因数后为：$[13^1]$
+
+例如 $26$，分解质因数后为：$[2^1,13^1]$
+
+我们可以发现，一个数 $n$ 的质因子中，最多只有一个 $\ge \sqrt n$ 的质因子。也就是说，我们只需要从 $2$ 枚举到 $\sqrt n$ 就可以了，最后那个质因子可以特判：
+
+上代码：
+
+```cpp
+void solve(int x) {
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			cout << i << " " << sum << endl; //输出 
+		}
+	if(x > 1) cout << x << " " << 1 << endl; //特判 
+	cout << endl;
+}
+```
+
+这里还需要注意一下，因为有的人会问：你的暴力法虽然会`TLE`，但除了`TLE`，你不会这样枚举不会`WA`吗？你真样枚举难道不会枚举到合数吗？你一定能保证是***质***因子吗？
+
+那我们就举一个例子，例如 $8$，如果按照某些人的想法，那枚举的时候因该是会枚举到 $4$ 这个因子的！
+
+但是我们会发现，它枚举到 $2$ 的时候，就已经输出完了！
+
+有的键盘侠又跳出来：你这只不过是巧合罢了！
+
+好吧，我再举一个例子，例如 $18$
+
+按照某些键盘侠的想法，它应该会枚举到 $6$ 这个因子的！
+
+但我们发现它枚举到 $2$ 和 $3$ 的时候就停止了！
+
+--------------
+
+所以说，这绝对不是什么巧合，而是有原理在里面的！
+
+如果我们枚举到一个合数 $k$，那么 $k$ 整除 $n$ 的时候，$n$ 已经被 $k$ 的质因子给整出了！
+
+所以，我们的代码一定能保证正确性~~，虽然会`TLE`~~
+
+## 质数筛法
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/870/)
+
+刚开始想到的思路就是从 $1\sim n$ 找质数，判断质数的时间复杂度为 $O(n)$，总体时间复杂度为 $O(n^2)$
+
+我们可以把判断指数的那一部分改成 $O(\sqrt n)$（具体怎么做请看上面），总体时间复杂度为 $O(n\sqrt n)$
+
+~~可惜还是过不了这道题，为啥我莫名奇妙的过了？~~
+
+### 埃式筛法
+
+我们想一想，我们每次枚举到一个质数 $k$，都把 $k$ 的倍数标记为合数，这样就可以了。
+
+那如何判断 $k$ 是不是质数呢？很简单，如果 $k$ 没有被标记过，就说明它不是 $2\sim k-1$ 这写数种的任意一个数的倍数，那么就是质数。
+
+这时候，我们的代码就呼之欲出，上代码：
+
+```cpp
+void solve(int x) {
+	//prime[i] = 1表示i这个数不是质数 
+	prime[1] = 1; //1不是质数，所以先标记 
+	for (long long i = 2; i <= x; i++) //之后开始枚举质数 
+		if(!prime[i]) //如果i是质数
+			for (long long j = i + i; j <= x; j += i) prime[j] = 1; //那么i的倍数就不是质数 
+}
+```
+
+那么这个算法的时间复杂度是多少呢？由于一个数的质因子不会超过 $\log_2 n$ 个，而一共有 $n$ 个数，所以时间复杂度为 $O(n \log n)$
+
+### 线性筛法
+
+上面那个算法时间复杂度 $O(n \log n)$，大家都知道了吧！那该怎么改进呢？
+
+由于一个数会被它的所有因数都筛一遍，所以时间复杂度很高，那我们能否只被筛一遍呢？答案是可以的！
+
+线性筛包含三个特征：
+
+- 如果一个数没有被标记过，那么就把这个数放进质数数组里（这个似乎是埃式筛法）
+- 遍历所有的质数，如果 $prime_j \mid i$，此时 $prime_j$ 是 $i$ 的最小质因子，那么 $prime_j \times i$ 的最小质因子为 $prime_j$。此时因该有一个判断跳出循环，因为如果后面又有一个质数能整除 $i$，那么就会被筛两次，不划算。所以这时候应当跳出循环。
+- 遍历所有的质数，如果 $prime_j \ \text{不能整除}\ i$，此时 $prime_j < i$ 的最小质因子，那么 $prime_j \times i$ 的最小质因子为 $prime_j$。
+
+如果我们当 $prime_j \mid i$ 时不退出，则会出问题，例如下面（$1$ 表示不是质数，$0$ 表示质数）：
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  1   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |
+
+质数集合：
+
+|      |      |      |      |      |
+| ---- | ---- | :--: | :--: | :--: |
+
+---------
+
+遍历到 $2$ 的时候，我们发现它是质数，便放进质数集合，并且进行标记。
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  1   |  0   |  0   |  1   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |
+
+质数集合：
+
+|  2   |      |      |      |      |
+| :--: | ---- | :--: | :--: | :--: |
+
+---
+
+遍历到 $3$ 的时候，我们发现它是质数，便放进质数集合，并且进行标记。
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  1   |  0   |  0   |  1   |  0   |  1   |  0   |  0   |  1   |  0   |  0   |  0   |
+
+质数集合：
+
+|  2   |  3   |      |      |      |
+| :--: | :--: | :--: | :--: | :--: |
+
+-----
+
+遍历到 $4$ 的时候，我们发现它已经被标记过了，说明不是质数，进行标记。
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  1   |  0   |  0   |  1   |  0   |  1   |  0   |  1   |  1   |  0   |  0   |  1   |
+
+质数集合：
+
+|  2   |  3   |      |      |      |
+| :--: | :--: | :--: | :--: | :--: |
+
+----
+
+遍历到 $5$ 的时候，我们发现它是质数，便放进质数集合，并且进行标记。（由于篇幅原因，这里不标记 $15$ 和 $25$，希望谅解）
+
+|  1   |  2   |  3   |  4   |  5   |  6   |  7   |  8   |  9   |  10  |  11  |  12  |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+|  1   |  0   |  0   |  1   |  0   |  1   |  0   |  1   |  1   |  1   |  0   |  1   |
+
+质数集合：
+
+|  2   |  3   |  5   |      |      |
+| :--: | :--: | :--: | :--: | :--: |
+
+遍历到 $6$ 的时候，我们发现它已经被标记过了，说明不是质数，进行标记。
+
+之后我们就会惊奇的发现，$12$ 又被标记了一次！
+
+为什么又被标记了一次呢？我们可以会到遍历 $4$ 的时候。
+
+那个时候当我们枚举完 $2$ 这个质数的时候，没有及时退出，导致了重复筛选！
+
+因为 $4$ 是 $2$ 的倍数，也就是说，我们后面肯定会枚举到一个数的时候，与 $2$ 相乘进行筛数（比如 $6$）。
+
+所以当 $prime_j \mid i$ 时，我们应当及时退出，否则会有重复筛选。
+
+上代码;
+
+```cpp
+void solve(int x) {
+	is_prime[1] = 1; //1不是质数，所以先标记
+	for (int i = 2; i <= x; i++) { //之后开始枚举质数
+		if(!is_prime[i]) prime[++cnt] = i; //如果没有被标记过，则把这个数放入素数数组里 
+		for (int j = 1; prime[j] * i <= x; j++) { //如果把大于x的质数也筛了，就没有意义了 
+			is_prime[prime[j] * i] = 1;
+			/*
+			1、(i % prime[j] != 0) 那么此时prime[j]不是i的最小质因子，只能说prime[j]小于i的最小质因子，那么prime[j]*i的最小质因子为prime[j]
+			2、(i % prime[j] == 0) 那么此时prime[j]是i的最小质因子，那么prime[j]*i的最小质因子为prime[j]，这时因该有一个判断跳出，否则会被后面的
+				质数又筛一遍，不划算 
+			*/
+			if(i % prime[j] == 0) break;
+		}
+	}
+}
+```
+
+# 约数
+
+## 求约数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/871/)
+
+刚开始想到的思路时从 $1 \sim n$ 枚举约数，时间复杂度 $O(n)$
+
+如何加快速度呢？我们可以回到质数那一块。
+
+在回到如何判断质数的那一块，我们看到了一句话：
+
+> 如果一个数 $n$，它能被 $k$ 整除，那么 $n$ 必然有另一个因数 $\frac{k}{n}$。
+
+是的，由于因数时成对出现的，所以我们只要从 $1 \sim \sqrt n$ 枚举因数就可以了，另外一半的因数可以通过已得到的因数求出来。
+
+不过还要注意一个事情，因为我们有可能碰到完全平方数，比如 $36$，那我们就会把 $6$ 这个因子枚举两遍了，所以我们还要在完全平方数这里判断一下。
+
+上代码;
+
+```cpp
+void solve(int x) {
+	cnt = 0;
+	memset(divisor, 0, sizeof(divisor)); 
+	for (int i = 1; i * i <= x; i++) //从2枚举到sqrt(x)
+        if(x % i == 0) { //发现i可以整除x
+            divisor[++cnt] = i; //放入数组
+            if(i != x / i) divisor[++cnt] = x / i; //如果不是完全平方数
+        }
+	sort(divisor + 1, divisor + cnt + 1);
+}
+```
+
+这个算法的时间复杂度是 $O(\sqrt n + (\log \log n))$，简化之后变成 $O(\sqrt n)$（要排序）
+
+可以省去排序的那一部分，先从 $1 \sim \sqrt n$，之后再倒过来添加约数，时间复杂度为 $O(\sqrt n)$（不过会快一点）
+
+```cpp
+void solve(int x) {
+	cnt = 0;
+	memset(divisor, 0, sizeof(divisor)); 
+	for (int i = 1; i * i <= x; i++)
+		if(x % i == 0) divisor[++cnt] = i; //把约束放进去 
+	for (int i = cnt; i >= 1; i--) //这里需要倒着来枚举，原因自己想想
+		if(divisor[i] * divisor[i] != x) divisor[++cnt] = x / divisor[i]; //如果不是完全平方数，就放入数组 
+}
+```
+
+## 约数个数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/872/)
+
+先考虑一个化简之后的问题：给定一个数 $n$，让你求出它有多少个约数。
+
+用"求约数"那个方法显然可以，但是这里介绍一种新的方法。
+
+----
+
+假设有一个数 $36$，让你求出它有多少个约数，你该怎么求呢？
+
+首先：先把这个数进行质因数分解（介绍质数那一块有讲，这里不再阐述）：$[2^2,3^2]$
+
+先把公式告诉大家，假设一个数 $n = p_1^{q_1} \times p_2^{q_2} \times ... \times p_k^{q_k}$ ，那么 $n$ 的约数有 $(q_1 + 1) \times (q_2+1)\ \times...\times\ (q_k+1)$，例如 $36$ 的约数有 $(2+1) \times (2+1) = 3 \times 3 = 9$ 个
+
+为什么是这样呢？我们可以想一想：
+
+$2^2$ 中含有 $2^0、2^1、2^2$ 三个数
+
+$3^2$ 中含有 $3^0、3^1、3^2$ 三个数
+
+那么我们需要在 $2^2$ 中取一个数，$3^2$ 中取一个数，互相相乘，就可以得到一个约数。
+
+那么有多少种取法呢？答案是 $3 \times 3 = 9$ 种取法。因为 $2^2$ 中含有 $3$ 个数，$3^2$ 中含有 $3$ 个数。
+
+所以代码如下：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;
+map<int, int>cnt; //记录质因数的个数
+set<int>s; //s表示一共有哪些质因数
+void add(int x) { //分解质因数 
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			s.insert(i); //把质因数加入进去
+			cnt[i] += sum; //质因数的个数进行更新
+		}
+	if(x > 1) s.insert(x), cnt[x]++; //特判 
+}
+
+void solve() {
+    long long ans = 1;
+	for (auto i:s) ans *= cnt[i] + 1; //计算答案
+	cout << ans << endl;
+}
+
+int main() {
+	cin >> n;
+    add(n);
+	solve();
+	return 0;
+}
+```
+
+那么回到原来的问题，题目要求把几个数乘在一起，但是`unsigned __int128` 也存不下这么大的数，又该怎么办呢？
+
+其实不需要乘在一起，因为我们只需要知道它们分解质因数的结果是什么就可以了。
+
+所以，代码也就很简单了：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 110
+#define mod 1000000007
+using namespace std;
+
+int n, a[maxn];
+map<int, int>cnt; //记录质因数的个数
+set<int>s; //s表示一共有哪些质因数
+void add(int x) { //分解质因数 
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			s.insert(i); //把质因数加入进去
+			cnt[i] += sum; //质因数的个数进行更新
+		}
+	if(x > 1) s.insert(x), cnt[x]++; //特判 
+}
+
+void solve() {
+	long long ans = 1; //虽然会 % mod，但还是需要防止爆int 
+	for (auto i:s) ans = ans * (cnt[i] + 1) % mod;
+	cout << ans << endl;
+}
+
+int main() {
+	cin >> n;
+	for (int i = 1; i <= n; i++) cin >> a[i];
+	for (int i = 1; i <= n; i++) add(a[i]); //每拿到一个数就进行分解质因子 
+	solve(); //输出 
+	return 0;
+}
+```
+
+## 约数之和
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/873/)
+
+先考虑一个化简之后的问题：给定一个数 $n$，让你求它的所有约数的和。
+
+用"求约数"那个方法显然可以，但是这里介绍一种新的方法。
+
+----
+
+假设有一个数 $36$，让你求它的约数之和。
+
+首先：先把这个数进行质因数分解（介绍质数那一块有讲，这里不再阐述）：$[2^2,3^2]$
+
+$2^2$ 中含有 $2^0、2^1、2^2$ 三个数
+
+$3^2$ 中含有 $3^0、3^1、3^2$ 三个数
+
+先把公式告诉大家，假设一个数 $n = p_1^{q_1} \times p_2^{q_2} \times ... \times p_k^{q_k}$ ，那么 $n$ 的约数之和为 $({p_1}^0+{p_1}^1+{p_1}^2+...{p_1}^{q_1}) \times ({p_2}^0+{p_2}^1+{p_2}^2+...{p_2}^{q_2})\ \times ... \times ({p_k}^0+{p_k}^1+{p_k}^2+...{p_k}^{q_k})$，例如 $36$ 的约数之和为 $(2^0+2^1+2^2)*(3^0+3^1+3^2)=91$
+
+为什么是这样呢？我们可以想一想：
+
+如果把上面那个公式按照乘法分配律拆开，会得到：$({p_1}^0 \times {p_2}^0 \times...{p_k}^0)+({p_1}^0 \times {p_2}^0 \times...{p_k}^1)+...+({p_1}^{q_1} \times {p_2}^{q_2} \times...{p_k}^{q_k})$
+
+我们会发现其中每一个加数都是 $n$ 的一个约数，所以加起来的和就是约数之和。
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;
+map<int, int>cnt; //记录质因数的个数
+set<int>s; //s表示一共有哪些质因数
+void add(int x) { //分解质因数 
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			s.insert(i); //把质因数加入进去
+			cnt[i] += sum; //质因数的个数进行更新
+		}
+	if(x > 1) s.insert(x), cnt[x]++; //特判 
+}
+
+int work(int x, int k) { //求x^0+x^1+x^2+...+x^k的和 
+	int last = 1, sum = 1;
+	for (int i = 1; i <= k; i++) last *= x, sum += last;
+	return sum;
+}
+
+void solve() {
+    long long ans = 1;
+	for (auto i:s) ans *= work(i, cnt[i]);
+	cout << ans << endl;
+}
+
+signed main() {
+	cin >> n;
+    add(n);
+	solve();
+	return 0;
+}
+```
+
+那么回到原来的问题，题目要求把几个数乘在一起，但是`unsigned __int128` 也存不下这么大的数，又该怎么办呢？
+
+其实不需要乘在一起，因为我们只需要知道它们分解质因数的结果是什么就可以了。
+
+所以，代码也就很简单了：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 110
+#define mod 1000000007
+#define int long long //十年OI一场空，不开long long见祖宗 
+using namespace std;
+
+int n, a[maxn];
+map<int, int>cnt; //记录质因数的个数
+set<int>s; //s表示一共有哪些质因数
+void add(int x) { //分解质因数 
+	for (int i = 2; i * i <= x; i++) //从2枚举到sqrt(x)
+		if(x % i == 0) { //发现能被i整除 
+			int sum = 0; //统计有多少个因数 
+			while(x % i == 0) x /= i, sum++; //每统计一个就除以i，并且sum+1 
+			s.insert(i); //把质因数加入进去
+			cnt[i] += sum; //质因数的个数进行更新
+		}
+	if(x > 1) s.insert(x), cnt[x]++; //特判 
+}
+
+int work(int x, int k) { //求x^0+x^1+x^2+...+x^k的和 
+	int last = 1, sum = 1;
+	for (int i = 1; i <= k; i++) last = (last * x) % mod, sum = (sum + last) % mod; 
+	return sum;
+}
+
+void solve() {
+	int ans = 1;
+	for (auto i:s) ans = ans * work(i, cnt[i]) % mod;
+	cout << ans << endl;
+}
+
+signed main() {
+	cin >> n;
+	for (int i = 1; i <= n; i++) cin >> a[i];
+	for (int i = 1; i <= n; i++) add(a[i]);
+	solve();
+	return 0;
+}
+```
+
+## 最大公约数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/874/)
+
+先给出公式：$(a,b)=(b,a\bmod b)$
+
+为什么可以这么弄呢？我们来推导一下。
+
+假设有一个数 $d$，$d \mid a$，$d \mid b$
+
+设 $a \bmod b = a - c \times b$，而 $d \mid a$，$d \mid c \times b$，那么 $d \mid a - c\times b$
+
+所以可得 $(a,b)=(b,a\bmod b)$
+
+上代码：
+
+```cpp
+int gcd(int a, int b) {
+	if(b == 0) return a; //0和a的最大公约数是a 
+	return gcd(b, a % b); //套公式 
+}
+```
+
+# 欧拉函数
+
+## 公式求欧拉函数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/875/)
+
+欧拉函数的定义：
+
+> $1 \sim n$ 中与 $n$ 互质的数的个数称为欧拉函数，记为 $\varphi(n)$
+
+先把公式告诉大家，假设一个数 $n = p_1^{q_1} \times p_2^{q_2} \times ... \times p_k^{q_k}$，那么 $ϕ(n) = n \times \frac{p_1-1}{p_1} \times \frac{p_2-1}{p_2} \times...\times \frac{p_k-1}{p_k} $ 
+
+那这个公式是怎么得来的呢？我们来推导一下。
+
+1. 首先：先去掉 $p_1、p_2...p_k$ 的倍数，即 $n-\frac{n}{p_1}-\frac{n}{p_2}-...-\frac{n}{p_k}$（注意这里是整除）
+
+但是我们会发现会有重复的元素被减掉了。比如一个数既是 $p_1$ 的倍数，也是 $p_2$ 的倍数，那么这个数就被减了两次。
+
+所以第二步我们要把减去的数加回来。
+
+2. 然后：加上多减的数，即 $\large+\frac{n}{p_1\times p_2}+\frac{n}{p_1\times p_3}+...+\frac{n}{p_{k-1}\times p_k}$
+
+但是我们会发现会有重复的元素被加完了。比如 $x$ 既是 $p_1$ 的倍数，又是 $p_2$ 的倍数，又是 $p_3$ 的倍数。那么在第一步被 $p_1、p_2、p_3$ 减了三遍，又在第二轮被 $p_1 \times p_2、p_1 \times p_3、p_2 \times p_3$ 减了三遍，相当于既没减、也没加。
+
+但是我们需要把这个数给去掉，所以第三步要把这个数去掉。
+
+3. 接着：减去多余的数，即 $\large-\frac{n}{p_1\times p_2\times p_3}-\frac{n}{p_1\times p_2\times p_4}-...-\frac{n}{p_{k-2}\times p_{k-1}\times p_k}$
+
+之后，我们可以找规律，看着前三步，分别是 $\large-\frac{n}{1\text{个质数}}、+\frac{n}{2\text{个质数的乘积}}、-\frac{n}{3\text{个质数的乘积}}$，所以可以得出，下一步应该是 $+\frac{n}{4\text{个质数的乘积}}$
+
+这样一直加加减减下去，我们就找到了答案。而最上面的公式展开就是这一堆“加加减减”了。
+
+由于每次计算欧拉函数的时间瓶颈是分解质因数，所以每次计算欧拉函数的时间复杂度为 $O(a)$，总体时间复杂度为 $O(n\sqrt a)$
+
+上代码：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 100010
+using namespace std;
+
+int n, a, cnt, divisor[maxn];
+void add(int x) {
+	cnt = 0;
+	memset(divisor, 0, sizeof(divisor));
+	for (int i = 2; i * i <= x; i++)
+		if(x % i == 0) { //找到因数 
+			while(x % i == 0) x /= i; //除尽 
+			divisor[++cnt] = i; //放入质数集合 
+		}
+	if(x > 1) divisor[++cnt] = x; //特判 
+}
+
+int solve(int x) {
+	int ans = x;
+	for (int i = 1; i <= cnt; i++)
+		ans = ans / divisor[i] * (divisor[i] - 1); //注意这里有可能会爆int 
+	return ans;
+}
+
+int main() {
+	cin >> n;
+	for (int i = 1; i <= n; i++) {
+		cin >> a;
+		add(a);
+		cout << solve(a) << endl;
+	}
+	return 0;
+}
+```
+
+## 筛法求欧拉函数
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/876/)
+
+此题如果用上面的公式法来求的话，那么时间复杂度为 $O(n \sqrt n)$，会 `TLE`。
+
+那该怎么办呢？还是先把答案透露一点点吧！$\scriptsize\text{要用线性筛}$
+
+----
+
+首先，我们先回顾一下我们的线性筛是怎么写的：
+
+```cpp
+void Linear(int x) {
+	is_prime[1] = 1;
+	for (int i = 2; i <= x; i++) {
+		if(!is_prime[i]) prime[++cnt] = i;
+		for (int j = 1; prime[j] * i <= n; j++) {
+			is_prime[prime[j] * i] = 1;
+			if(i % prime[j] == 0) break;
+		}
+	}
+}
+```
+
+之后，我们定义一个 `phi` 数组，$phi_i$ 表示 $$\varphi(i)$$ 是多少。
+
+然后就是一步一步的分析了：
+
+1. 如果 $i$ 是质数，那么 $phi_i = i-1$（除了自己以外，与其它 $1 \sim i-1$ 都互质）
+
+2. 如果 $prime_j \mid i$，那么 $prime_j \times i$ 的质因子其实就是 $i$ 的质因子，因为 $prime_j$ 也是 $i$ 的质因子。那么可以得出：$phi_{prime_j \times i} = prime_j \times i \times \frac{p_1-1}{p_1} \times \frac{p_2-1}{p_2} \times...\times \frac{p_k-1}{p_k}$，我们可以发现除第一项以外，其它项就是 $phi_i$，所以 $phi_{prime_j \times i}=phi_i\times prime_j$
+
+3. 如果 $prime_j\ \text{不能整除}\ i$，那么 $prime_j \times i$ 的质因子其实就是 $i$ 的质因子和 $prime_j$，那么可以得出：$phi_{prime_j \times i} = prime_j \times i \times \frac{p_1-1}{p_1} \times \frac{p_2-1}{p_2} \times...\times \frac{p_k-1}{p_k} \times \frac{prime_j - 1}{prime_j}$，即 $phi_{prime_j \times i} = prime_j \times \frac{prime_j - 1}{prime_j} \times phi_i$，化简后为：$phi_{prime_j \times i} = (prime_j - 1) \times phi_i$
+
+通过以上三点，我们的代码就呼之欲出了：
+
+```cpp
+#include <bits/stdc++.h>
+#define maxn 1000010
+#define int long long
+using namespace std;
+
+int n, ans, cnt, phi[maxn], prime[maxn];
+bool is_prime[maxn];
+int solve(int x) {
+	phi[1] = 1; //初始化 
+	is_prime[1] = 1; //初始化
+	for (int i = 2; i <= n; i++) {
+		if(!is_prime[i]) prime[++cnt] = i, phi[i] = i - 1; //标记质数，求质数的欧拉函数 
+		for (int j = 1; prime[j] * i <= n; j++) {
+			is_prime[prime[j] * i] = 1;
+			if(i % prime[j] == 0) {
+				phi[prime[j] * i] = phi[i] * prime[j]; //如果prime[j]能整除i 
+				break;
+			} else phi[prime[j] * i] = phi[i] * (prime[j] - 1); //如果prime[j]不能整除i 
+		}
+	}
+}
+
+signed main() {
+	cin >> n;
+	solve(n);
+	for (int i = 1; i <= n; i++) ans += phi[i]; //求和 
+	cout << ans << endl;
+	return 0;
+}
+```
+
+# 快速幂
+
+## 快速幂
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/877/)
+
+本题暴力很简单，只需要一行代码就可以搞定，时间复杂度 $O(n\cdot k)\ (k \text{是指数})$
+
+```cpp
+for (int i = 1; i <= k; i++) ans = ans * a % p;
+```
+
+很明显，这样太慢了，那该怎么改进呢？
+
+### 快速幂（分治法）
+
+我们得到一个数 $a^k$，如果 $k$ 为偶数，这个数可以改成 $a^{\frac{k}{2}} \cdot a^{\frac{k}{2}}$。如果 $k$ 为奇数，这个数可以改成 $a^{\frac{k}{2}} \cdot a^{\frac{k}{2}} \cdot a$。
+
+有人觉得这是一句废话，但是聪明人看到这句话~~也会觉得这是句废话~~，会惊奇的发现：我们其实可以进行分治！
+
+每次我们把一个数 $a^k$ 分成 $a^{\frac{k}{2}} \cdot a^{\frac{k}{2}}$，之后接着进行递归分下去，直到 $k=1$ 时，就返回。
+
+那么我们可以写出以下代码：
+
+```cpp
+int ksm(int a, int b, int p) { //底数、指数、模数 
+	if(b == 1) return a; //边界条件 
+	int t = ksm(a, b >> 1, p); //进行分治 
+	if(b & 1) return t * t % p * a % p; //如果b为奇数 
+	else return t * t % p; //如果b为偶数 
+}
+```
+
+### 快速幂（倍增法）
+
+倍增这个玩意儿与二进制有很大关系，例如求 $4^5 \bmod 10$
+
+> ​	$4^5 \bmod 10$
+>
+> 解：原式 $=4^{101_2}\bmod 10$
+>
+> ​	$=(4^{2^0+2^2})\bmod 10$
+>
+> ​	$=(4^{2^0}\times 4^{2^2})\bmod 10$
+>
+> ​	$=(4^{2^0}\bmod 10)\times (4^{2^2}\bmod 10)$
+>
+> ​	$=4\times 6$
+>
+> ​	$=24$
+
+根据上面这个例子和快速幂的基本了解，那么代码就可以写出来了：
+
+```cpp
+int ksm(int a, int b, int p) {
+	int res = 1; //初始化
+	while(b) {
+		if(b & 1) res = res * a % p; //奇数情况 
+		b = b >> 1; //进行位移，即除以2 
+		a = a * a % p; //并且倍增 
+	}
+	return res;
+}
+```
+
+## 快速幂求逆元
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/878/)
+
+逆元的概念：
+
+>  一个数 $b\ \text {在} \bmod m$ 的情况下，如果 $b\ \text{与}\ m\ \text{互质}$，则存在一个数 $x$，使得 $b \cdot x \equiv 1(\bmod m)$，则称 $x$ 为 $b$ 的模 $m$ 乘法逆元，记为 $b^{-1}(\bmod m)$。
+
+通过费马小定理，我们可以得到以下这个式子：
+
+> $b^{m-1}\equiv 1(\bmod m)$
+
+换算一下可以得到：
+
+> $b\cdot b^{m-2}\equiv 1(\bmod m)$
+
+所以，$b^{-1}(\bmod m)$ 的值为 $b^{m-2}$
+
+此时，代码就呼之欲出了：
+
+```cpp
+#include <bits/stdc++.h>
+#define int unsigned long long
+using namespace std;
+
+int ksm(int a, int b, int p) { //底数、指数、模数 
+	int res = 1; //初始化
+	while(b) {
+		if(b & 1) res = res * a % p; //奇数情况 
+		b = b / 2; //除以2 
+		a = a * a % p; //倍增 
+	}
+	return res;
+}
+
+int n; 
+signed main() {
+	cin >> n;
+	while(n--) {
+		int a, p;
+		cin >> a >> p;
+		int ans = ksm(a, p - 2, p); //求逆元
+		if(a * ans % p != 1) cout << "impossible" << endl; //如果没有逆元 
+		else cout << ans << endl;
+	}
+	return 0;
+}
+```
+
+还需要注意一点，由于此题数据过大，导致了如果使用分治快速幂，会空间超限（系统调用栈空间）
+
+# 扩展欧几里得算法
+
+## 扩展欧几里得算法
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/879/)
+
+### 裴蜀定理
+
+> 定义：设 $a,b$ 是不全为零的整数，对任意整数 $x,y$，满足 $\gcd(a,b) \mid ax+by$，且存在整数 $x,y$, 获得最小的正整数（1倍），使得 $ax+by=\gcd(a,b)$.
+
+原理：
+
+> 当 $b=0$ 时 $ax+by=a$ 故而 $x=1,y=0$
+>
+> 当 $b \ne 0$ 时:
+>
+> 设 $d=\gcd(a,b)$，那么可得
+>
+> $ax+by=d$
+>
+> $by+(a\bmod b)x=d$
+>
+> $by+(a-⌊\frac{a}{b}⌋\cdot b)x=d$
+>
+> $ax+b(y-⌊\frac{a}{b}⌋x)=d$
+
+进而写出以下代码：
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int exgcd(int a, int b, int &x, int &y) {
+	if(b == 0) {
+		x = 1, y = 0; //b = 0的情况 
+		return a;
+	}
+	int d = exgcd(b, a % b, y, x); //把x和y颠倒过来，方便后面的计算 
+	y -= a / b * x; //x不用动，y要动 
+	return d;
+}
+
+int n, a, b;
+int main() {
+	scanf("%d", &n);
+	while(n--) {
+		int a, b, x = 0, y = 0;
+		scanf("%d%d", &a, &b);
+		exgcd(a, b, x, y);
+		printf("%d %d\n", x, y);
+	} 
+	return 0;
+}
+```
+
+## 线性同余方程
+
+[$\color{red}题\color{yellow}目\color{green}传\color{blue}送\color{purple}门$](https://www.acwing.com/problem/content/880/)
+
+把题目中的式子转换以下：
+
+> $a \cdot x \equiv b(\bmod m)$
+>
+> $a \cdot x = m\cdot y+b$
+>
+> $a \cdot x + m\cdot y = b$
+
+这样就变成了扩展欧几里得算法了！
+
+但是需要注意一点，只有 $\gcd(a,m)\mid b$ 时才有解，否则无解。
+
+因此先用扩展欧几里得算法求出一组整数 $x_0,y_0$, 使得 $a\cdot x_0+m\cdot y_0=\gcd(a,m)$。 然后 $x=x_0\cdot b/\gcd(a,m) \bmod m$ 即是所求
+
+上代码;
+
+```cpp
+#include <bits/stdc++.h>
+#define int long long
+using namespace std;
+
+int exgcd(int a, int b, int &x, int &y) {
+	if(b == 0) {
+		x = 1, y = 0; //b = 0的情况 
+		return a;
+	}
+	int d = exgcd(b, a % b, y, x); //把x和y颠倒过来，方便后面的计算 
+	y -= a / b * x; //x不用动，y要动 
+	return d;
+}
+
+int n, a, b;
+signed main() {
+	scanf("%lld", &n);
+	while(n--) {
+		int a, b, m, x = 0, y = 0;
+		scanf("%lld%lld%lld", &a, &b, &m);
+		int d = exgcd(a, m, x, y); //求出gcd
+		if(b % d) printf("impossible\n"); //无解 
+		else {
+			exgcd(a, m, x, y); //扩展欧几里得算法 
+			printf("%lld\n", x * (b / d) % m); //答案 
+		}
+	}
+	return 0;
+}
+```
+

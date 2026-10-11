@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="统计方形加强版(p2241).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="三连击升级版(p1618).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="烤鸡(p2089).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="回文质数(p1217).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="全排列问题(p1706).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="火柴棒等式(p1149).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="组合的输出%28p1157%29.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="选数(p1036).cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="火星人%28p1088%29.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
