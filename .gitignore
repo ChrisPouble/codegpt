@@ -40,6 +40,11 @@ cmake_install.cmake
 *.in
 *.ans
 *.out
+/cppLearn/语法/visualstudio/day09/二进制文件/person.txt
+/cppLearn/语法/visualstudio/day09/文本文件/test.txt
+/cppLearn/语法/visualstudio/day09/职工管理系统/empFile.txt
+/vscode/2026/20260327/test1.txt
+/vscode/2026/20260327/test2.txt
 
 # Local credentials
 .env
